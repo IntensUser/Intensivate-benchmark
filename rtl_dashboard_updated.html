@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTL Performance Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #1a1a1a;
+        }
+
+        .upload-section {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #d1d5db;
+        }
+
+        .upload-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: block;
+            font-weight: 500;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .nav-section {
+            margin: 0;
+        }
+
+        .nav-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 6px;
+            display: block;
+            font-weight: 500;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            color: #1a1a1a;
+            cursor: pointer;
+        }
+
+        select:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        .breadcrumb {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 20px;
+            padding: 10px 14px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            border-radius: 8px;
+            color: white;
+        }
+
+        .metric-card.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .metric-card.tertiary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .metric-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .chart-section {
+            margin-bottom: 24px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .counter-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .counter-selector label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .counter-selector select {
+            width: 250px;
+        }
+
+        .selectors-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .type-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .type-selector label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .type-selector select {
+            width: 120px;
+        }
+
+        .cache-block-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .cache-block-selector label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .cache-block-selector select {
+            width: 150px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            height: 400px;
+        }
+
+        .info-message {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6b7280;
+        }
+
+        .run-info {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .run-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .run-info-item {
+            font-size: 13px;
+        }
+
+        .run-info-label {
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .run-info-value {
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 RTL Performance Dashboard</h1>
+
+        <div class="upload-section">
+            <label class="upload-label">Upload SQLite Database (.db)</label>
+            <input type="file" id="dbUpload" accept=".db,.sqlite,.sqlite3" />
+        </div>
+
+        <div id="errorContainer"></div>
+
+        <div id="mainContent" style="display: none;">
+            <!-- Navigation -->
+            <div class="nav-grid">
+                <div class="nav-section">
+                    <label class="nav-label">RTL Model</label>
+                    <select id="modelSelect" disabled>
+                        <option value="">Select Model</option>
+                    </select>
+                </div>
+
+                <div class="nav-section">
+                    <label class="nav-label">Benchmark</label>
+                    <select id="benchmarkSelect" disabled>
+                        <option value="">Select Benchmark</option>
+                    </select>
+                </div>
+
+                <div class="nav-section">
+                    <label class="nav-label">Workload</label>
+                    <select id="workloadSelect" disabled>
+                        <option value="">Select Workload</option>
+                    </select>
+                </div>
+
+                <div class="nav-section">
+                    <label class="nav-label">Run Configuration</label>
+                    <select id="configSelect" disabled>
+                        <option value="">Select Config</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="breadcrumb" id="breadcrumb">
+                No selection
+            </div>
+
+            <!-- Run Information -->
+            <div class="run-info" id="runInfo" style="display: none;">
+                <div class="run-info-grid">
+                    <div class="run-info-item">
+                        <div class="run-info-label">Run ID</div>
+                        <div class="run-info-value" id="infoRunId">-</div>
+                    </div>
+                    <div class="run-info-item">
+                        <div class="run-info-label">Command</div>
+                        <div class="run-info-value" id="infoCommand" style="font-size: 11px; word-break: break-all;">-</div>
+                    </div>
+                    <div class="run-info-item">
+                        <div class="run-info-label">Xterm Log</div>
+                        <div class="run-info-value" id="infoXtermLog" style="font-size: 11px; word-break: break-all;">-</div>
+                    </div>
+                    <div class="run-info-item">
+                        <div class="run-info-label">Lines Processed</div>
+                        <div class="run-info-value" id="infoLines">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">IPC</div>
+                    <div class="metric-value" id="ipcValue">-</div>
+                </div>
+                <div class="metric-card secondary">
+                    <div class="metric-label">CPU Utilized</div>
+                    <div class="metric-value" id="cpuValue">-</div>
+                </div>
+                <div class="metric-card tertiary">
+                    <div class="metric-label">Context Switches</div>
+                    <div class="metric-value" id="ctxValue">-</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Page Faults</div>
+                    <div class="metric-value" id="pfValue">-</div>
+                </div>
+                <div class="metric-card secondary">
+                    <div class="metric-label">Elapsed Time</div>
+                    <div class="metric-value" id="elapsedValue">-</div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div class="chart-title">Counter Time Series</div>
+                    <div class="selectors-row">
+                        <div class="type-selector" id="typeSelector" style="display: none;">
+                            <label>Type:</label>
+                            <select id="typeSelect"></select>
+                        </div>
+                        <div class="counter-selector">
+                            <label>Counter:</label>
+                            <select id="counterSelect" disabled>
+                                <option value="">Select counter</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cache-block-selector" id="cacheBlockSelector" style="display: none;">
+                    <label>Block:</label>
+                    <select id="cacheBlockSelect">
+                        <option value="">All</option>
+                    </select>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="counterChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="loadingMessage" class="loading" style="display: none;">
+            Loading database...
+        </div>
+    </div>
+
+    <script>
+        let db = null;
+        let chart = null;
+        let currentRunId = null;
+
+        const dbUpload = document.getElementById('dbUpload');
+        const errorContainer = document.getElementById('errorContainer');
+        const mainContent = document.getElementById('mainContent');
+        const loadingMessage = document.getElementById('loadingMessage');
+
+        const modelSelect = document.getElementById('modelSelect');
+        const benchmarkSelect = document.getElementById('benchmarkSelect');
+        const workloadSelect = document.getElementById('workloadSelect');
+        const configSelect = document.getElementById('configSelect');
+        const counterSelect = document.getElementById('counterSelect');
+        const typeSelect = document.getElementById('typeSelect');
+        const typeSelector = document.getElementById('typeSelector');
+        const cacheBlockSelect = document.getElementById('cacheBlockSelect');
+        const breadcrumb = document.getElementById('breadcrumb');
+
+        function getBlockType(block) {
+            if (String(block).startsWith('L3_')) return 'L3';
+            if (String(block).startsWith('L2_')) return 'L2';
+            return 'core';
+        }
+
+        function getBlockLabel(block, type) {
+            if (type === 'core') return `Core ${block}`;
+            const idx = block.split('_')[1];
+            return `${type} ${idx}`;
+        }
+
+        function showError(message) {
+            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        function clearError() {
+            errorContainer.innerHTML = '';
+        }
+
+        // Load database
+        dbUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loadingMessage.style.display = 'block';
+            mainContent.style.display = 'none';
+            clearError();
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+
+                db = new SQL.Database(new Uint8Array(arrayBuffer));
+
+                loadingMessage.style.display = 'none';
+                mainContent.style.display = 'block';
+
+                loadModels();
+            } catch (error) {
+                loadingMessage.style.display = 'none';
+                showError(`Error loading database: ${error.message}`);
+            }
+        });
+
+        function loadModels() {
+            try {
+                const result = db.exec('SELECT DISTINCT rtl_model FROM runs ORDER BY rtl_model');
+
+                modelSelect.innerHTML = '<option value="">Select Model</option>';
+
+                if (result.length > 0) {
+                    result[0].values.forEach(([model]) => {
+                        const option = document.createElement('option');
+                        option.value = model;
+                        option.textContent = model;
+                        modelSelect.appendChild(option);
+                    });
+                }
+
+                modelSelect.disabled = false;
+            } catch (error) {
+                showError(`Error loading models: ${error.message}`);
+            }
+        }
+
+        modelSelect.addEventListener('change', () => {
+            const model = modelSelect.value;
+
+            if (!model) {
+                benchmarkSelect.disabled = true;
+                workloadSelect.disabled = true;
+                configSelect.disabled = true;
+                updateBreadcrumb();
+                return;
+            }
+
+            const result = db.exec(`
+                SELECT DISTINCT benchmark FROM runs
+                WHERE rtl_model = ?
+                ORDER BY benchmark
+            `, [model]);
+
+            benchmarkSelect.innerHTML = '<option value="">Select Benchmark</option>';
+
+            if (result.length > 0) {
+                result[0].values.forEach(([benchmark]) => {
+                    const option = document.createElement('option');
+                    option.value = benchmark;
+                    option.textContent = benchmark;
+                    benchmarkSelect.appendChild(option);
+                });
+            }
+
+            benchmarkSelect.disabled = false;
+            workloadSelect.disabled = true;
+            configSelect.disabled = true;
+            updateBreadcrumb();
+        });
+
+        benchmarkSelect.addEventListener('change', () => {
+            const model = modelSelect.value;
+            const benchmark = benchmarkSelect.value;
+
+            if (!benchmark) {
+                workloadSelect.disabled = true;
+                configSelect.disabled = true;
+                updateBreadcrumb();
+                return;
+            }
+
+            const result = db.exec(`
+                SELECT DISTINCT workload FROM runs
+                WHERE rtl_model = ? AND benchmark = ?
+                ORDER BY workload
+            `, [model, benchmark]);
+
+            workloadSelect.innerHTML = '<option value="">Select Workload</option>';
+
+            if (result.length > 0) {
+                result[0].values.forEach(([workload]) => {
+                    const option = document.createElement('option');
+                    option.value = workload;
+                    option.textContent = workload;
+                    workloadSelect.appendChild(option);
+                });
+            }
+
+            workloadSelect.disabled = false;
+            configSelect.disabled = true;
+            updateBreadcrumb();
+        });
+
+        workloadSelect.addEventListener('change', () => {
+            const model = modelSelect.value;
+            const benchmark = benchmarkSelect.value;
+            const workload = workloadSelect.value;
+
+            if (!workload) {
+                configSelect.disabled = true;
+                updateBreadcrumb();
+                return;
+            }
+
+            const result = db.exec(`
+                SELECT DISTINCT config FROM runs
+                WHERE rtl_model = ? AND benchmark = ? AND workload = ?
+                ORDER BY config
+            `, [model, benchmark, workload]);
+
+            configSelect.innerHTML = '<option value="">Select Config</option>';
+
+            if (result.length > 0) {
+                result[0].values.forEach(([config]) => {
+                    const option = document.createElement('option');
+                    option.value = config;
+                    option.textContent = config;
+                    configSelect.appendChild(option);
+                });
+            }
+
+            configSelect.disabled = false;
+            updateBreadcrumb();
+        });
+
+        configSelect.addEventListener('change', () => {
+            if (!configSelect.value) {
+                updateBreadcrumb();
+                return;
+            }
+
+            loadRunData();
+            updateBreadcrumb();
+        });
+
+        function updateBreadcrumb() {
+            const parts = [];
+            if (modelSelect.value) parts.push(modelSelect.value);
+            if (benchmarkSelect.value) parts.push(benchmarkSelect.value);
+            if (workloadSelect.value) parts.push(workloadSelect.value);
+            if (configSelect.value) parts.push(configSelect.value);
+
+            breadcrumb.textContent = parts.length > 0 ? parts.join(' → ') : 'No selection';
+        }
+
+        function loadRunData() {
+            const model = modelSelect.value;
+            const benchmark = benchmarkSelect.value;
+            const workload = workloadSelect.value;
+            const config = configSelect.value;
+
+            try {
+                const runResult = db.exec(`
+                    SELECT run_id, ipc, cpu_utilized, context_switches, page_faults, elapsed_time,
+                           command, xterm_log_path, line_start, line_end
+                    FROM runs
+                    WHERE rtl_model = ? AND benchmark = ? AND workload = ? AND config = ?
+                `, [model, benchmark, workload, config]);
+
+                if (runResult.length === 0 || runResult[0].values.length === 0) {
+                    showError('No run data found for this selection');
+                    return;
+                }
+
+                const [run_id, ipc, cpu_utilized, context_switches, page_faults, elapsed_time,
+                       command, xterm_log_path, line_start, line_end] = runResult[0].values[0];
+
+                currentRunId = run_id;
+
+                // Update metrics
+                document.getElementById('ipcValue').textContent = ipc ? ipc.toFixed(2) : 'N/A';
+                document.getElementById('cpuValue').textContent = cpu_utilized ? cpu_utilized.toFixed(2) : 'N/A';
+                document.getElementById('ctxValue').textContent = context_switches ? context_switches.toFixed(1) + '/s' : 'N/A';
+                document.getElementById('pfValue').textContent = page_faults ? page_faults.toFixed(1) + '/s' : 'N/A';
+                document.getElementById('elapsedValue').textContent = elapsed_time ? elapsed_time.toFixed(1) + 's' : 'N/A';
+
+                // Update run info
+                document.getElementById('infoRunId').textContent = run_id || 'N/A';
+                document.getElementById('infoCommand').textContent = command || 'N/A';
+                document.getElementById('infoXtermLog').textContent = xterm_log_path || 'N/A';
+                document.getElementById('infoLines').textContent =
+                    (line_start && line_end) ? `${line_start} - ${line_end}` : 'N/A';
+                document.getElementById('runInfo').style.display = 'block';
+
+                // Load available types first
+                loadTypes(run_id);
+
+            } catch (error) {
+                showError(`Error loading run data: ${error.message}`);
+            }
+        }
+
+        function loadTypes(runId) {
+            try {
+                const result = db.exec(`
+                    SELECT DISTINCT cache_block FROM counters
+                    WHERE run_id = ?
+                `, [runId]);
+
+                const blocks = result.length > 0 ? result[0].values.map(([b]) => b) : [];
+                const typesPresent = new Set(blocks.map(getBlockType));
+                const typeOrder = ['core', 'L2', 'L3'];
+
+                typeSelect.innerHTML = '<option value="">Select type</option>';
+                typeOrder.filter(t => typesPresent.has(t)).forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type === 'core' ? 'Core' : type;
+                    typeSelect.appendChild(option);
+                });
+
+                typeSelector.style.display = 'flex';
+                counterSelect.disabled = true;
+                counterSelect.innerHTML = '<option value="">Select counter</option>';
+                cacheBlockSelector.style.display = 'none';
+                if (chart) { chart.destroy(); chart = null; }
+            } catch (error) {
+                showError(`Error loading types: ${error.message}`);
+            }
+        }
+
+        function loadCounters(runId, type) {
+            try {
+                let query, params;
+                if (type === 'core') {
+                    query = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND cache_block NOT LIKE 'L%' ORDER BY counter_name`;
+                    params = [runId];
+                } else {
+                    query = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND cache_block LIKE ? ORDER BY counter_name`;
+                    params = [runId, `${type}_%`];
+                }
+
+                const result = db.exec(query, params);
+
+                counterSelect.innerHTML = '<option value="">Select counter</option>';
+                if (result.length > 0) {
+                    result[0].values.forEach(([counter]) => {
+                        const option = document.createElement('option');
+                        option.value = counter;
+                        option.textContent = counter;
+                        counterSelect.appendChild(option);
+                    });
+                }
+
+                counterSelect.disabled = false;
+                cacheBlockSelector.style.display = 'none';
+                if (chart) { chart.destroy(); chart = null; }
+            } catch (error) {
+                showError(`Error loading counters: ${error.message}`);
+            }
+        }
+
+        typeSelect.addEventListener('change', () => {
+            const type = typeSelect.value;
+            if (!type) {
+                counterSelect.disabled = true;
+                counterSelect.innerHTML = '<option value="">Select counter</option>';
+                cacheBlockSelector.style.display = 'none';
+                return;
+            }
+            loadCounters(currentRunId, type);
+        });
+
+        counterSelect.addEventListener('change', () => {
+            if (!counterSelect.value) return;
+
+            const type = typeSelect.value;
+            let query, params;
+
+            if (type === 'core') {
+                query = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%' ORDER BY CAST(cache_block AS INTEGER)`;
+                params = [currentRunId, counterSelect.value];
+            } else {
+                query = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ? ORDER BY cache_block`;
+                params = [currentRunId, counterSelect.value, `${type}_%`];
+            }
+
+            const blocksResult = db.exec(query, params);
+            const blocks = blocksResult.length > 0 ? blocksResult[0].values.map(([b]) => b) : [];
+
+            cacheBlockSelect.innerHTML = '<option value="">All</option>';
+            blocks.forEach(block => {
+                const option = document.createElement('option');
+                option.value = block;
+                option.textContent = getBlockLabel(block, type);
+                cacheBlockSelect.appendChild(option);
+            });
+
+            cacheBlockSelector.style.display = blocks.length > 1 ? 'flex' : 'none';
+            plotCounter();
+        });
+
+        cacheBlockSelect.addEventListener('change', plotCounter);
+
+        function plotCounter() {
+            if (!currentRunId || !counterSelect.value) return;
+
+            const counterName = counterSelect.value;
+            const type = typeSelect.value;
+            const cacheBlock = cacheBlockSelect.value;
+
+            let query, params;
+
+            if (cacheBlock) {
+                query = `
+                    SELECT timestamp, value FROM counters
+                    WHERE run_id = ? AND counter_name = ? AND cache_block = ?
+                    ORDER BY timestamp
+                `;
+                params = [currentRunId, counterName, cacheBlock];
+            } else if (type === 'core') {
+                query = `
+                    SELECT timestamp, cache_block, value FROM counters
+                    WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%'
+                    ORDER BY timestamp, CAST(cache_block AS INTEGER)
+                `;
+                params = [currentRunId, counterName];
+            } else {
+                query = `
+                    SELECT timestamp, cache_block, value FROM counters
+                    WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ?
+                    ORDER BY timestamp, cache_block
+                `;
+                params = [currentRunId, counterName, `${type}_%`];
+            }
+
+            const result = db.exec(query, params);
+
+            if (result.length === 0 || result[0].values.length === 0) {
+                showError('No data found for this counter/type combination');
+                return;
+            }
+
+            clearError();
+
+            const colors = [
+                'rgb(75, 192, 192)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)',
+                'rgb(255, 206, 86)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)',
+                'rgb(201, 203, 207)', 'rgb(255, 205, 86)'
+            ];
+
+            let datasets = [];
+
+            if (cacheBlock) {
+                const data = result[0].values.map(([timestamp, value]) => ({ x: timestamp, y: value }));
+                datasets.push({
+                    label: `${counterName} (${getBlockLabel(cacheBlock, type)})`,
+                    data,
+                    borderColor: colors[0],
+                    backgroundColor: colors[0].replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1
+                });
+            } else {
+                const blockData = {};
+                result[0].values.forEach(([timestamp, cache_block, value]) => {
+                    if (!blockData[cache_block]) blockData[cache_block] = [];
+                    blockData[cache_block].push({ x: timestamp, y: value });
+                });
+
+                let colorIndex = 0;
+                Object.keys(blockData).sort().forEach(block => {
+                    datasets.push({
+                        label: `${counterName} (${getBlockLabel(block, type)})`,
+                        data: blockData[block],
+                        borderColor: colors[colorIndex % colors.length],
+                        backgroundColor: colors[colorIndex % colors.length].replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.1
+                    });
+                    colorIndex++;
+                });
+            }
+
+            const ctx = document.getElementById('counterChart').getContext('2d');
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: 'Timestamp' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Value' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
