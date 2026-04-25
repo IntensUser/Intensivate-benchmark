@@ -300,6 +300,24 @@
             color: #6b7280;
         }
 
+        .progress-bar-wrap {
+            width: 300px;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            margin: 10px auto 0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
         /* Compare ready badge */
         .compare-ready-banner {
             display: none;
@@ -512,7 +530,10 @@
         </div>
 
         <div id="loadingMessage" class="loading" style="display: none;">
-            Loading database...
+            <span id="loadingText">Loading database...</span>
+            <div class="progress-bar-wrap" id="progressWrap">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
         </div>
     </div>
 
@@ -635,14 +656,51 @@
             loadCompareModels();
         }
 
-        // Auto-load performance.db on startup
+        const loadingText   = document.getElementById('loadingText');
+        const progressWrap  = document.getElementById('progressWrap');
+        const progressFill  = document.getElementById('progressFill');
+
+        function setProgress(loaded, total) {
+            if (total) {
+                const pct = Math.min(100, Math.round(loaded / total * 100));
+                progressFill.style.width = pct + '%';
+                loadingText.textContent = `Downloading performance.db… ${pct}% (${(loaded/1e6).toFixed(1)} / ${(total/1e6).toFixed(1)} MB)`;
+            } else {
+                loadingText.textContent = `Downloading performance.db… ${(loaded/1e6).toFixed(1)} MB`;
+            }
+        }
+
+        // Auto-load performance.db on startup with streaming progress
         (async () => {
             loadingMessage.style.display = 'block';
+            loadingText.textContent = 'Connecting to performance.db…';
             try {
                 const resp = await fetch('./performance.db');
                 if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const arrayBuffer = await resp.arrayBuffer();
-                await loadDb(arrayBuffer);
+
+                const contentLength = resp.headers.get('Content-Length');
+                const total = contentLength ? parseInt(contentLength) : null;
+                if (total) progressWrap.style.display = 'block';
+
+                const reader = resp.body.getReader();
+                const chunks = [];
+                let received = 0;
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+                    setProgress(received, total);
+                }
+
+                loadingText.textContent = 'Initializing database…';
+                progressWrap.style.display = 'none';
+
+                const buf = new Uint8Array(received);
+                let offset = 0;
+                for (const chunk of chunks) { buf.set(chunk, offset); offset += chunk.length; }
+
+                await loadDb(buf.buffer);
             } catch (err) {
                 loadingMessage.style.display = 'none';
                 showError(`Could not auto-load performance.db: ${err.message}. Upload a database file above.`);
