@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RTL Performance Dashboard</title>
+    <title>Intensivate Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -57,16 +57,52 @@
             cursor: pointer;
         }
 
+        /* Mode toggle */
+        .mode-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .mode-btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: 2px solid #d1d5db;
+            background: white;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .mode-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+        }
+
+        .mode-btn.compare-active {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* Single-run nav */
         .nav-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
 
-        .nav-section {
-            margin: 0;
-        }
+        .nav-section { margin: 0; }
 
         .nav-label {
             font-size: 13px;
@@ -92,6 +128,52 @@
             cursor: not-allowed;
         }
 
+        /* Compare panels */
+        .compare-nav {
+            display: none;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .compare-nav.visible {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .run-panel {
+            border-radius: 10px;
+            padding: 16px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .run-panel.panel-a {
+            border: 2px solid #667eea;
+        }
+
+        .run-panel.panel-b {
+            border: 2px solid #f5576c;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .panel-a .panel-title { color: #667eea; }
+        .panel-b .panel-title { color: #f5576c; }
+
+        .panel-status {
+            font-size: 11px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .panel-a.ready .panel-status { color: #667eea; font-style: normal; font-weight: 600; }
+        .panel-b.ready .panel-status { color: #f5576c; font-style: normal; font-weight: 600; }
+
+        /* Breadcrumb */
         .breadcrumb {
             font-size: 13px;
             color: #6b7280;
@@ -101,6 +183,7 @@
             border-radius: 6px;
         }
 
+        /* Metrics */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -135,9 +218,8 @@
             font-weight: 700;
         }
 
-        .chart-section {
-            margin-bottom: 24px;
-        }
+        /* Chart */
+        .chart-section { margin-bottom: 24px; }
 
         .chart-header {
             display: flex;
@@ -152,60 +234,30 @@
             color: #1a1a1a;
         }
 
-        .counter-selector {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .counter-selector label {
-            font-size: 13px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .counter-selector select {
-            width: 250px;
-        }
-
         .selectors-row {
             display: flex;
             gap: 16px;
             align-items: center;
         }
 
-        .type-selector {
+        .type-selector, .counter-selector, .cache-block-selector {
             display: flex;
             gap: 8px;
             align-items: center;
         }
 
-        .type-selector label {
+        .type-selector label, .counter-selector label, .cache-block-selector label {
             font-size: 13px;
             color: #6b7280;
             font-weight: 500;
+            white-space: nowrap;
         }
 
-        .type-selector select {
-            width: 120px;
-        }
+        .type-selector select { width: 120px; }
+        .counter-selector select { width: 250px; }
+        .cache-block-selector select { width: 150px; }
 
-        .cache-block-selector {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-top: 12px;
-        }
-
-        .cache-block-selector label {
-            font-size: 13px;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .cache-block-selector select {
-            width: 150px;
-        }
+        .cache-block-selector { margin-top: 12px; }
 
         .chart-container {
             background: white;
@@ -215,12 +267,23 @@
             height: 400px;
         }
 
-        .info-message {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-            font-size: 14px;
+        /* Run info */
+        .run-info {
+            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
         }
+
+        .run-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .run-info-item { font-size: 13px; }
+        .run-info-label { color: #6b7280; font-weight: 500; margin-bottom: 2px; }
+        .run-info-value { color: #1a1a1a; font-weight: 600; }
 
         .error-message {
             background: #fee2e2;
@@ -237,70 +300,60 @@
             color: #6b7280;
         }
 
-        .run-info {
-            background: #f8f9fa;
-            padding: 16px;
+        /* Compare ready badge */
+        .compare-ready-banner {
+            display: none;
+            background: linear-gradient(135deg, #667eea22, #f5576c22);
+            border: 1px solid #d1d5db;
             border-radius: 8px;
-            margin-bottom: 24px;
-        }
-
-        .run-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .run-info-item {
+            padding: 10px 16px;
+            margin-bottom: 16px;
             font-size: 13px;
+            color: #374151;
         }
 
-        .run-info-label {
-            color: #6b7280;
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-
-        .run-info-value {
-            color: #1a1a1a;
-            font-weight: 600;
-        }
+        .compare-ready-banner.visible { display: block; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 RTL Performance Dashboard</h1>
+        <h1>Intensivate Dashboard</h1>
 
         <div class="upload-section">
-            <label class="upload-label">Upload SQLite Database (.db)</label>
+            <label class="upload-label">Database file — auto-loading <code>performance.db</code> (or upload a different one)</label>
             <input type="file" id="dbUpload" accept=".db,.sqlite,.sqlite3" />
         </div>
 
         <div id="errorContainer"></div>
 
         <div id="mainContent" style="display: none;">
-            <!-- Navigation -->
-            <div class="nav-grid">
+
+            <!-- Mode toggle -->
+            <div class="mode-toggle">
+                <button id="singleModeBtn" class="mode-btn active">Single Run</button>
+                <button id="compareModeBtn" class="mode-btn">⇄ Compare Runs</button>
+            </div>
+
+            <!-- Single-run navigation -->
+            <div id="singleNav" class="nav-grid">
                 <div class="nav-section">
                     <label class="nav-label">RTL Model</label>
                     <select id="modelSelect" disabled>
                         <option value="">Select Model</option>
                     </select>
                 </div>
-
                 <div class="nav-section">
                     <label class="nav-label">Benchmark</label>
                     <select id="benchmarkSelect" disabled>
                         <option value="">Select Benchmark</option>
                     </select>
                 </div>
-
                 <div class="nav-section">
                     <label class="nav-label">Workload</label>
                     <select id="workloadSelect" disabled>
                         <option value="">Select Workload</option>
                     </select>
                 </div>
-
                 <div class="nav-section">
                     <label class="nav-label">Run Configuration</label>
                     <select id="configSelect" disabled>
@@ -309,11 +362,79 @@
                 </div>
             </div>
 
-            <div class="breadcrumb" id="breadcrumb">
-                No selection
+            <!-- Compare-mode navigation (two independent run selectors) -->
+            <div id="compareNav" class="compare-nav">
+                <!-- Run A -->
+                <div class="run-panel panel-a" id="panelA">
+                    <div>
+                        <div class="panel-title">Run A</div>
+                        <div class="panel-status" id="panelAStatus">Select a run below</div>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">RTL Model</label>
+                        <select id="aModelSelect" disabled>
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Benchmark</label>
+                        <select id="aBenchmarkSelect" disabled>
+                            <option value="">Select Benchmark</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Workload</label>
+                        <select id="aWorkloadSelect" disabled>
+                            <option value="">Select Workload</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Run Configuration</label>
+                        <select id="aConfigSelect" disabled>
+                            <option value="">Select Config</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Run B -->
+                <div class="run-panel panel-b" id="panelB">
+                    <div>
+                        <div class="panel-title">Run B</div>
+                        <div class="panel-status" id="panelBStatus">Select a run below</div>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">RTL Model</label>
+                        <select id="bModelSelect" disabled>
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Benchmark</label>
+                        <select id="bBenchmarkSelect" disabled>
+                            <option value="">Select Benchmark</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Workload</label>
+                        <select id="bWorkloadSelect" disabled>
+                            <option value="">Select Workload</option>
+                        </select>
+                    </div>
+                    <div class="nav-section">
+                        <label class="nav-label">Run Configuration</label>
+                        <select id="bConfigSelect" disabled>
+                            <option value="">Select Config</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <!-- Run Information -->
+            <!-- Compare-ready hint -->
+            <div class="compare-ready-banner" id="compareReadyBanner"></div>
+
+            <div class="breadcrumb" id="breadcrumb">No selection</div>
+
+            <!-- Run Information (single mode only) -->
             <div class="run-info" id="runInfo" style="display: none;">
                 <div class="run-info-grid">
                     <div class="run-info-item">
@@ -335,8 +456,8 @@
                 </div>
             </div>
 
-            <!-- Performance Metrics -->
-            <div class="metrics-grid">
+            <!-- Performance Metrics (single mode only) -->
+            <div class="metrics-grid" id="metricsGrid">
                 <div class="metric-card">
                     <div class="metric-label">IPC</div>
                     <div class="metric-value" id="ipcValue">-</div>
@@ -398,22 +519,51 @@
     <script>
         let db = null;
         let chart = null;
+        let compareMode = false;
+
+        // Single-run state
         let currentRunId = null;
 
-        const dbUpload = document.getElementById('dbUpload');
-        const errorContainer = document.getElementById('errorContainer');
-        const mainContent = document.getElementById('mainContent');
-        const loadingMessage = document.getElementById('loadingMessage');
+        // Compare-mode state
+        let compareRunAId = null;
+        let compareRunBId = null;
+        let compareRunALabel = '';
+        let compareRunBLabel = '';
 
-        const modelSelect = document.getElementById('modelSelect');
+        // DOM refs — single nav
+        const dbUpload        = document.getElementById('dbUpload');
+        const errorContainer  = document.getElementById('errorContainer');
+        const mainContent     = document.getElementById('mainContent');
+        const loadingMessage  = document.getElementById('loadingMessage');
+        const modelSelect     = document.getElementById('modelSelect');
         const benchmarkSelect = document.getElementById('benchmarkSelect');
-        const workloadSelect = document.getElementById('workloadSelect');
-        const configSelect = document.getElementById('configSelect');
-        const counterSelect = document.getElementById('counterSelect');
-        const typeSelect = document.getElementById('typeSelect');
-        const typeSelector = document.getElementById('typeSelector');
-        const cacheBlockSelect = document.getElementById('cacheBlockSelect');
-        const breadcrumb = document.getElementById('breadcrumb');
+        const workloadSelect  = document.getElementById('workloadSelect');
+        const configSelect    = document.getElementById('configSelect');
+
+        // DOM refs — compare nav
+        const aModelSelect     = document.getElementById('aModelSelect');
+        const aBenchmarkSelect = document.getElementById('aBenchmarkSelect');
+        const aWorkloadSelect  = document.getElementById('aWorkloadSelect');
+        const aConfigSelect    = document.getElementById('aConfigSelect');
+        const bModelSelect     = document.getElementById('bModelSelect');
+        const bBenchmarkSelect = document.getElementById('bBenchmarkSelect');
+        const bWorkloadSelect  = document.getElementById('bWorkloadSelect');
+        const bConfigSelect    = document.getElementById('bConfigSelect');
+
+        // DOM refs — shared
+        const counterSelect       = document.getElementById('counterSelect');
+        const typeSelect          = document.getElementById('typeSelect');
+        const typeSelector        = document.getElementById('typeSelector');
+        const cacheBlockSelect    = document.getElementById('cacheBlockSelect');
+        const cacheBlockSelector  = document.getElementById('cacheBlockSelector');
+        const breadcrumb          = document.getElementById('breadcrumb');
+        const singleNav           = document.getElementById('singleNav');
+        const compareNav          = document.getElementById('compareNav');
+        const compareReadyBanner  = document.getElementById('compareReadyBanner');
+        const metricsGrid         = document.getElementById('metricsGrid');
+        const runInfoEl           = document.getElementById('runInfo');
+
+        // ── Utilities ──────────────────────────────────────────────────────────
 
         function getBlockType(block) {
             if (String(block).startsWith('L3_')) return 'L3';
@@ -427,286 +577,322 @@
             return `${type} ${idx}`;
         }
 
-        function showError(message) {
-            errorContainer.innerHTML = `<div class="error-message">${message}</div>`;
+        function showError(msg) {
+            errorContainer.innerHTML = `<div class="error-message">${msg}</div>`;
         }
 
-        function clearError() {
-            errorContainer.innerHTML = '';
+        function clearError() { errorContainer.innerHTML = ''; }
+
+        // ── Mode toggle ────────────────────────────────────────────────────────
+
+        document.getElementById('singleModeBtn').addEventListener('click', () => {
+            if (!compareMode) return;
+            compareMode = false;
+            document.getElementById('singleModeBtn').classList.add('active');
+            document.getElementById('singleModeBtn').classList.remove('compare-active');
+            document.getElementById('compareModeBtn').classList.remove('active', 'compare-active');
+            singleNav.style.display = '';
+            compareNav.classList.remove('visible');
+            compareReadyBanner.classList.remove('visible');
+            metricsGrid.style.display = '';
+            runInfoEl.style.display = 'none';
+            resetChart();
+            updateBreadcrumb();
+        });
+
+        document.getElementById('compareModeBtn').addEventListener('click', () => {
+            if (compareMode) return;
+            compareMode = true;
+            document.getElementById('compareModeBtn').classList.add('compare-active');
+            document.getElementById('singleModeBtn').classList.remove('active');
+            singleNav.style.display = 'none';
+            compareNav.classList.add('visible');
+            metricsGrid.style.display = 'none';
+            runInfoEl.style.display = 'none';
+            resetChart();
+            updateBreadcrumb();
+        });
+
+        function resetChart() {
+            if (chart) { chart.destroy(); chart = null; }
+            typeSelector.style.display = 'none';
+            counterSelect.disabled = true;
+            counterSelect.innerHTML = '<option value="">Select counter</option>';
+            cacheBlockSelector.style.display = 'none';
+            clearError();
         }
 
-        // Load database
+        // ── DB load ────────────────────────────────────────────────────────────
+
+        async function loadDb(arrayBuffer) {
+            const SQL = await initSqlJs({
+                locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+            });
+            db = new SQL.Database(new Uint8Array(arrayBuffer));
+            loadingMessage.style.display = 'none';
+            mainContent.style.display = 'block';
+            loadModels();
+            loadCompareModels();
+        }
+
+        // Auto-load performance.db on startup
+        (async () => {
+            loadingMessage.style.display = 'block';
+            try {
+                const resp = await fetch('./performance.db');
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const arrayBuffer = await resp.arrayBuffer();
+                await loadDb(arrayBuffer);
+            } catch (err) {
+                loadingMessage.style.display = 'none';
+                showError(`Could not auto-load performance.db: ${err.message}. Upload a database file above.`);
+            }
+        })();
+
         dbUpload.addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file) return;
-
             loadingMessage.style.display = 'block';
             mainContent.style.display = 'none';
             clearError();
-
             try {
                 const arrayBuffer = await file.arrayBuffer();
-                const SQL = await initSqlJs({
-                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
-                });
-
-                db = new SQL.Database(new Uint8Array(arrayBuffer));
-
+                await loadDb(arrayBuffer);
+            } catch (err) {
                 loadingMessage.style.display = 'none';
-                mainContent.style.display = 'block';
-
-                loadModels();
-            } catch (error) {
-                loadingMessage.style.display = 'none';
-                showError(`Error loading database: ${error.message}`);
+                showError(`Error loading database: ${err.message}`);
             }
         });
 
+        // ── Single-run cascade ─────────────────────────────────────────────────
+
         function loadModels() {
-            try {
-                const result = db.exec('SELECT DISTINCT rtl_model FROM runs ORDER BY rtl_model');
-
-                modelSelect.innerHTML = '<option value="">Select Model</option>';
-
-                if (result.length > 0) {
-                    result[0].values.forEach(([model]) => {
-                        const option = document.createElement('option');
-                        option.value = model;
-                        option.textContent = model;
-                        modelSelect.appendChild(option);
-                    });
-                }
-
-                modelSelect.disabled = false;
-            } catch (error) {
-                showError(`Error loading models: ${error.message}`);
-            }
+            const result = db.exec('SELECT DISTINCT rtl_model FROM runs ORDER BY rtl_model');
+            modelSelect.innerHTML = '<option value="">Select Model</option>';
+            if (result.length > 0) result[0].values.forEach(([m]) => addOption(modelSelect, m, m));
+            modelSelect.disabled = false;
         }
 
         modelSelect.addEventListener('change', () => {
             const model = modelSelect.value;
-
-            if (!model) {
-                benchmarkSelect.disabled = true;
-                workloadSelect.disabled = true;
-                configSelect.disabled = true;
-                updateBreadcrumb();
-                return;
-            }
-
-            const result = db.exec(`
-                SELECT DISTINCT benchmark FROM runs
-                WHERE rtl_model = ?
-                ORDER BY benchmark
-            `, [model]);
-
-            benchmarkSelect.innerHTML = '<option value="">Select Benchmark</option>';
-
-            if (result.length > 0) {
-                result[0].values.forEach(([benchmark]) => {
-                    const option = document.createElement('option');
-                    option.value = benchmark;
-                    option.textContent = benchmark;
-                    benchmarkSelect.appendChild(option);
-                });
-            }
-
-            benchmarkSelect.disabled = false;
+            benchmarkSelect.disabled = true;
             workloadSelect.disabled = true;
             configSelect.disabled = true;
+            if (!model) { updateBreadcrumb(); return; }
+
+            const result = db.exec(
+                'SELECT DISTINCT benchmark FROM runs WHERE rtl_model = ? ORDER BY benchmark', [model]);
+            benchmarkSelect.innerHTML = '<option value="">Select Benchmark</option>';
+            if (result.length > 0) result[0].values.forEach(([b]) => addOption(benchmarkSelect, b, b));
+            benchmarkSelect.disabled = false;
             updateBreadcrumb();
         });
 
         benchmarkSelect.addEventListener('change', () => {
-            const model = modelSelect.value;
-            const benchmark = benchmarkSelect.value;
-
-            if (!benchmark) {
-                workloadSelect.disabled = true;
-                configSelect.disabled = true;
-                updateBreadcrumb();
-                return;
-            }
-
-            const result = db.exec(`
-                SELECT DISTINCT workload FROM runs
-                WHERE rtl_model = ? AND benchmark = ?
-                ORDER BY workload
-            `, [model, benchmark]);
-
-            workloadSelect.innerHTML = '<option value="">Select Workload</option>';
-
-            if (result.length > 0) {
-                result[0].values.forEach(([workload]) => {
-                    const option = document.createElement('option');
-                    option.value = workload;
-                    option.textContent = workload;
-                    workloadSelect.appendChild(option);
-                });
-            }
-
-            workloadSelect.disabled = false;
+            const model = modelSelect.value, bench = benchmarkSelect.value;
+            workloadSelect.disabled = true;
             configSelect.disabled = true;
+            if (!bench) { updateBreadcrumb(); return; }
+
+            const result = db.exec(
+                'SELECT DISTINCT workload FROM runs WHERE rtl_model = ? AND benchmark = ? ORDER BY workload',
+                [model, bench]);
+            workloadSelect.innerHTML = '<option value="">Select Workload</option>';
+            if (result.length > 0) result[0].values.forEach(([w]) => addOption(workloadSelect, w, w));
+            workloadSelect.disabled = false;
             updateBreadcrumb();
         });
 
         workloadSelect.addEventListener('change', () => {
-            const model = modelSelect.value;
-            const benchmark = benchmarkSelect.value;
-            const workload = workloadSelect.value;
+            const model = modelSelect.value, bench = benchmarkSelect.value, wl = workloadSelect.value;
+            configSelect.disabled = true;
+            if (!wl) { updateBreadcrumb(); return; }
 
-            if (!workload) {
-                configSelect.disabled = true;
-                updateBreadcrumb();
-                return;
-            }
-
-            const result = db.exec(`
-                SELECT DISTINCT config FROM runs
-                WHERE rtl_model = ? AND benchmark = ? AND workload = ?
-                ORDER BY config
-            `, [model, benchmark, workload]);
-
+            const result = db.exec(
+                'SELECT run_id, config FROM runs WHERE rtl_model = ? AND benchmark = ? AND workload = ? ORDER BY config',
+                [model, bench, wl]);
             configSelect.innerHTML = '<option value="">Select Config</option>';
-
-            if (result.length > 0) {
-                result[0].values.forEach(([config]) => {
-                    const option = document.createElement('option');
-                    option.value = config;
-                    option.textContent = config;
-                    configSelect.appendChild(option);
-                });
-            }
-
+            if (result.length > 0) result[0].values.forEach(([id, cfg]) => addOption(configSelect, id, cfg));
             configSelect.disabled = false;
             updateBreadcrumb();
         });
 
         configSelect.addEventListener('change', () => {
-            if (!configSelect.value) {
-                updateBreadcrumb();
-                return;
-            }
-
-            loadRunData();
+            if (!configSelect.value) { updateBreadcrumb(); return; }
+            currentRunId = configSelect.value;
+            loadRunData(currentRunId);
             updateBreadcrumb();
         });
 
-        function updateBreadcrumb() {
-            const parts = [];
-            if (modelSelect.value) parts.push(modelSelect.value);
-            if (benchmarkSelect.value) parts.push(benchmarkSelect.value);
-            if (workloadSelect.value) parts.push(workloadSelect.value);
-            if (configSelect.value) parts.push(configSelect.value);
+        // ── Compare cascade ────────────────────────────────────────────────────
 
-            breadcrumb.textContent = parts.length > 0 ? parts.join(' → ') : 'No selection';
+        function loadCompareModels() {
+            const result = db.exec('SELECT DISTINCT rtl_model FROM runs ORDER BY rtl_model');
+            [aModelSelect, bModelSelect].forEach(sel => {
+                sel.innerHTML = '<option value="">Select Model</option>';
+                if (result.length > 0) result[0].values.forEach(([m]) => addOption(sel, m, m));
+                sel.disabled = false;
+            });
         }
 
-        function loadRunData() {
-            const model = modelSelect.value;
-            const benchmark = benchmarkSelect.value;
-            const workload = workloadSelect.value;
-            const config = configSelect.value;
+        function setupCompareCascade(prefix) {
+            const mSel  = document.getElementById(`${prefix}ModelSelect`);
+            const bSel  = document.getElementById(`${prefix}BenchmarkSelect`);
+            const wSel  = document.getElementById(`${prefix}WorkloadSelect`);
+            const cSel  = document.getElementById(`${prefix}ConfigSelect`);
+            const isA   = prefix === 'a';
 
-            try {
-                const runResult = db.exec(`
-                    SELECT run_id, ipc, cpu_utilized, context_switches, page_faults, elapsed_time,
-                           command, xterm_log_path, line_start, line_end
-                    FROM runs
-                    WHERE rtl_model = ? AND benchmark = ? AND workload = ? AND config = ?
-                `, [model, benchmark, workload, config]);
+            mSel.addEventListener('change', () => {
+                bSel.disabled = true; wSel.disabled = true; cSel.disabled = true;
+                if (!mSel.value) return;
+                const result = db.exec(
+                    'SELECT DISTINCT benchmark FROM runs WHERE rtl_model = ? ORDER BY benchmark', [mSel.value]);
+                bSel.innerHTML = '<option value="">Select Benchmark</option>';
+                if (result.length > 0) result[0].values.forEach(([b]) => addOption(bSel, b, b));
+                bSel.disabled = false;
+            });
 
-                if (runResult.length === 0 || runResult[0].values.length === 0) {
-                    showError('No run data found for this selection');
+            bSel.addEventListener('change', () => {
+                wSel.disabled = true; cSel.disabled = true;
+                if (!bSel.value) return;
+                const result = db.exec(
+                    'SELECT DISTINCT workload FROM runs WHERE rtl_model = ? AND benchmark = ? ORDER BY workload',
+                    [mSel.value, bSel.value]);
+                wSel.innerHTML = '<option value="">Select Workload</option>';
+                if (result.length > 0) result[0].values.forEach(([w]) => addOption(wSel, w, w));
+                wSel.disabled = false;
+            });
+
+            wSel.addEventListener('change', () => {
+                cSel.disabled = true;
+                if (!wSel.value) return;
+                const result = db.exec(
+                    'SELECT run_id, config FROM runs WHERE rtl_model = ? AND benchmark = ? AND workload = ? ORDER BY config',
+                    [mSel.value, bSel.value, wSel.value]);
+                cSel.innerHTML = '<option value="">Select Config</option>';
+                if (result.length > 0) result[0].values.forEach(([id, cfg]) => addOption(cSel, id, cfg));
+                cSel.disabled = false;
+            });
+
+            cSel.addEventListener('change', () => {
+                const panel  = document.getElementById(`panel${prefix.toUpperCase()}`);
+                const status = document.getElementById(`panel${prefix.toUpperCase()}Status`);
+                if (!cSel.value) {
+                    panel.classList.remove('ready');
+                    status.textContent = 'Select a run below';
+                    if (isA) { compareRunAId = null; compareRunALabel = ''; }
+                    else     { compareRunBId = null; compareRunBLabel = ''; }
+                    updateCompareReady();
                     return;
                 }
+                const label = `${mSel.value} / ${bSel.value} / ${wSel.value} / ${cSel.options[cSel.selectedIndex].textContent}`;
+                panel.classList.add('ready');
+                status.textContent = label;
+                if (isA) { compareRunAId = cSel.value; compareRunALabel = label; }
+                else     { compareRunBId = cSel.value; compareRunBLabel = label; }
+                updateCompareReady();
+            });
+        }
 
-                const [run_id, ipc, cpu_utilized, context_switches, page_faults, elapsed_time,
-                       command, xterm_log_path, line_start, line_end] = runResult[0].values[0];
+        setupCompareCascade('a');
+        setupCompareCascade('b');
 
-                currentRunId = run_id;
+        function updateCompareReady() {
+            const bothReady = compareRunAId && compareRunBId;
+            compareReadyBanner.classList.toggle('visible', bothReady);
+            if (bothReady) {
+                compareReadyBanner.innerHTML =
+                    `<b>Ready to compare.</b> Now select a Type and Counter above the chart to plot both runs.<br>` +
+                    `<span style="color:#667eea">&#9646; A:</span> ${compareRunALabel} &nbsp;|&nbsp; ` +
+                    `<span style="color:#f5576c">&#9646; B:</span> ${compareRunBLabel}`;
+                // reload types from Run A so the counter selector is available
+                loadTypes(compareRunAId);
+            }
+            updateBreadcrumb();
+        }
 
-                // Update metrics
-                document.getElementById('ipcValue').textContent = ipc ? ipc.toFixed(2) : 'N/A';
-                document.getElementById('cpuValue').textContent = cpu_utilized ? cpu_utilized.toFixed(2) : 'N/A';
-                document.getElementById('ctxValue').textContent = context_switches ? context_switches.toFixed(1) + '/s' : 'N/A';
-                document.getElementById('pfValue').textContent = page_faults ? page_faults.toFixed(1) + '/s' : 'N/A';
-                document.getElementById('elapsedValue').textContent = elapsed_time ? elapsed_time.toFixed(1) + 's' : 'N/A';
+        // ── Breadcrumb ─────────────────────────────────────────────────────────
 
-                // Update run info
-                document.getElementById('infoRunId').textContent = run_id || 'N/A';
-                document.getElementById('infoCommand').textContent = command || 'N/A';
-                document.getElementById('infoXtermLog').textContent = xterm_log_path || 'N/A';
-                document.getElementById('infoLines').textContent =
-                    (line_start && line_end) ? `${line_start} - ${line_end}` : 'N/A';
-                document.getElementById('runInfo').style.display = 'block';
-
-                // Load available types first
-                loadTypes(run_id);
-
-            } catch (error) {
-                showError(`Error loading run data: ${error.message}`);
+        function updateBreadcrumb() {
+            if (compareMode) {
+                const parts = [];
+                if (compareRunAId) parts.push(`A: ${compareRunALabel}`);
+                if (compareRunBId) parts.push(`B: ${compareRunBLabel}`);
+                breadcrumb.textContent = parts.length ? parts.join('   vs   ') : 'No selection';
+            } else {
+                const parts = [];
+                if (modelSelect.value)     parts.push(modelSelect.value);
+                if (benchmarkSelect.value) parts.push(benchmarkSelect.value);
+                if (workloadSelect.value)  parts.push(workloadSelect.value);
+                if (configSelect.value)    parts.push(configSelect.options[configSelect.selectedIndex]?.textContent || '');
+                breadcrumb.textContent = parts.length ? parts.join(' → ') : 'No selection';
             }
         }
 
+        // ── Run data (single mode) ─────────────────────────────────────────────
+
+        function loadRunData(runId) {
+            try {
+                const r = db.exec(`
+                    SELECT run_id, ipc, cpu_utilized, context_switches, page_faults, elapsed_time,
+                           command, xterm_log_path, line_start, line_end
+                    FROM runs WHERE run_id = ?`, [runId]);
+                if (!r.length || !r[0].values.length) { showError('No run data found'); return; }
+                const [id, ipc, cpu, ctx, pf, elapsed, cmd, xlog, ls, le] = r[0].values[0];
+                currentRunId = id;
+                document.getElementById('ipcValue').textContent     = ipc     ? ipc.toFixed(2)     : 'N/A';
+                document.getElementById('cpuValue').textContent     = cpu     ? cpu.toFixed(2)     : 'N/A';
+                document.getElementById('ctxValue').textContent     = ctx     ? ctx.toFixed(1)+'/s': 'N/A';
+                document.getElementById('pfValue').textContent      = pf      ? pf.toFixed(1)+'/s' : 'N/A';
+                document.getElementById('elapsedValue').textContent = elapsed ? elapsed.toFixed(1)+'s':'N/A';
+                document.getElementById('infoRunId').textContent    = id   || 'N/A';
+                document.getElementById('infoCommand').textContent  = cmd  || 'N/A';
+                document.getElementById('infoXtermLog').textContent = xlog || 'N/A';
+                document.getElementById('infoLines').textContent    = (ls && le) ? `${ls} - ${le}` : 'N/A';
+                runInfoEl.style.display = 'block';
+                loadTypes(id);
+            } catch (err) { showError(`Error loading run data: ${err.message}`); }
+        }
+
+        // ── Type / Counter / Block loaders ─────────────────────────────────────
+
         function loadTypes(runId) {
             try {
-                const result = db.exec(`
-                    SELECT DISTINCT cache_block FROM counters
-                    WHERE run_id = ?
-                `, [runId]);
-
+                const result = db.exec('SELECT DISTINCT cache_block FROM counters WHERE run_id = ?', [runId]);
                 const blocks = result.length > 0 ? result[0].values.map(([b]) => b) : [];
                 const typesPresent = new Set(blocks.map(getBlockType));
-                const typeOrder = ['core', 'L2', 'L3'];
-
                 typeSelect.innerHTML = '<option value="">Select type</option>';
-                typeOrder.filter(t => typesPresent.has(t)).forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type === 'core' ? 'Core' : type;
-                    typeSelect.appendChild(option);
+                ['core', 'L2', 'L3'].filter(t => typesPresent.has(t)).forEach(t => {
+                    addOption(typeSelect, t, t === 'core' ? 'Core' : t);
                 });
-
                 typeSelector.style.display = 'flex';
                 counterSelect.disabled = true;
                 counterSelect.innerHTML = '<option value="">Select counter</option>';
                 cacheBlockSelector.style.display = 'none';
                 if (chart) { chart.destroy(); chart = null; }
-            } catch (error) {
-                showError(`Error loading types: ${error.message}`);
-            }
+            } catch (err) { showError(`Error loading types: ${err.message}`); }
         }
 
         function loadCounters(runId, type) {
             try {
                 let query, params;
                 if (type === 'core') {
-                    query = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND cache_block NOT LIKE 'L%' ORDER BY counter_name`;
+                    query  = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND counter_name LIKE '%_rate' AND cache_block NOT LIKE 'L%' ORDER BY counter_name`;
                     params = [runId];
                 } else {
-                    query = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND cache_block LIKE ? ORDER BY counter_name`;
+                    query  = `SELECT DISTINCT counter_name FROM counters WHERE run_id = ? AND counter_name LIKE '%_rate' AND cache_block LIKE ? ORDER BY counter_name`;
                     params = [runId, `${type}_%`];
                 }
-
                 const result = db.exec(query, params);
-
                 counterSelect.innerHTML = '<option value="">Select counter</option>';
-                if (result.length > 0) {
-                    result[0].values.forEach(([counter]) => {
-                        const option = document.createElement('option');
-                        option.value = counter;
-                        option.textContent = counter;
-                        counterSelect.appendChild(option);
-                    });
-                }
-
+                if (result.length > 0) result[0].values.forEach(([c]) => {
+                    const base = c.replace(/_rate$/, '');
+                    addOption(counterSelect, base, base);
+                });
                 counterSelect.disabled = false;
                 cacheBlockSelector.style.display = 'none';
                 if (chart) { chart.destroy(); chart = null; }
-            } catch (error) {
-                showError(`Error loading counters: ${error.message}`);
-            }
+            } catch (err) { showError(`Error loading counters: ${err.message}`); }
         }
 
         typeSelect.addEventListener('change', () => {
@@ -717,125 +903,140 @@
                 cacheBlockSelector.style.display = 'none';
                 return;
             }
-            loadCounters(currentRunId, type);
+            const refRunId = compareMode ? compareRunAId : currentRunId;
+            if (refRunId) loadCounters(refRunId, type);
         });
 
         counterSelect.addEventListener('change', () => {
             if (!counterSelect.value) return;
-
             const type = typeSelect.value;
+            const rateCounterName = counterSelect.value + '_rate';
+            const refRunId = compareMode ? compareRunAId : currentRunId;
+            if (!refRunId) return;
+
             let query, params;
-
             if (type === 'core') {
-                query = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%' ORDER BY CAST(cache_block AS INTEGER)`;
-                params = [currentRunId, counterSelect.value];
+                query  = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%' ORDER BY CAST(cache_block AS INTEGER)`;
+                params = [refRunId, rateCounterName];
             } else {
-                query = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ? ORDER BY cache_block`;
-                params = [currentRunId, counterSelect.value, `${type}_%`];
+                query  = `SELECT DISTINCT cache_block FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ? ORDER BY cache_block`;
+                params = [refRunId, rateCounterName, `${type}_%`];
             }
-
             const blocksResult = db.exec(query, params);
             const blocks = blocksResult.length > 0 ? blocksResult[0].values.map(([b]) => b) : [];
-
             cacheBlockSelect.innerHTML = '<option value="">All</option>';
-            blocks.forEach(block => {
-                const option = document.createElement('option');
-                option.value = block;
-                option.textContent = getBlockLabel(block, type);
-                cacheBlockSelect.appendChild(option);
-            });
-
+            blocks.forEach(b => addOption(cacheBlockSelect, b, getBlockLabel(b, type)));
             cacheBlockSelector.style.display = blocks.length > 1 ? 'flex' : 'none';
             plotCounter();
         });
 
         cacheBlockSelect.addEventListener('change', plotCounter);
 
-        function plotCounter() {
-            if (!currentRunId || !counterSelect.value) return;
+        // ── Plot ───────────────────────────────────────────────────────────────
 
-            const counterName = counterSelect.value;
-            const type = typeSelect.value;
-            const cacheBlock = cacheBlockSelect.value;
+        const COLORS = [
+            'rgb(75, 192, 192)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)',
+            'rgb(255, 206, 86)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)',
+            'rgb(201, 203, 207)', 'rgb(255, 205, 86)'
+        ];
 
+        function makeDataset(label, data, colorIdx) {
+            const c = COLORS[colorIdx % COLORS.length];
+            return {
+                label, data,
+                borderColor: c,
+                backgroundColor: c.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                borderWidth: 2, pointRadius: 0, tension: 0.1
+            };
+        }
+
+        function queryCounter(runId, rateCounterName, type, cacheBlock) {
             let query, params;
-
             if (cacheBlock) {
-                query = `
-                    SELECT timestamp, value FROM counters
-                    WHERE run_id = ? AND counter_name = ? AND cache_block = ?
-                    ORDER BY timestamp
-                `;
-                params = [currentRunId, counterName, cacheBlock];
+                query  = `SELECT timestamp, value FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block = ? ORDER BY timestamp`;
+                params = [runId, rateCounterName, cacheBlock];
             } else if (type === 'core') {
-                query = `
-                    SELECT timestamp, cache_block, value FROM counters
-                    WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%'
-                    ORDER BY timestamp, CAST(cache_block AS INTEGER)
-                `;
-                params = [currentRunId, counterName];
+                query  = `SELECT timestamp, cache_block, value FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%' ORDER BY timestamp, CAST(cache_block AS INTEGER)`;
+                params = [runId, rateCounterName];
             } else {
-                query = `
-                    SELECT timestamp, cache_block, value FROM counters
-                    WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ?
-                    ORDER BY timestamp, cache_block
-                `;
-                params = [currentRunId, counterName, `${type}_%`];
+                query  = `SELECT timestamp, cache_block, value FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ? ORDER BY timestamp, cache_block`;
+                params = [runId, rateCounterName, `${type}_%`];
             }
-
             const result = db.exec(query, params);
+            return result.length > 0 ? result[0].values : [];
+        }
 
-            if (result.length === 0 || result[0].values.length === 0) {
-                showError('No data found for this counter/type combination');
-                return;
+        function queryCounterSummed(runId, rateCounterName, type, cacheBlock) {
+            let query, params;
+            if (cacheBlock) {
+                query  = `SELECT timestamp, value FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block = ? ORDER BY timestamp`;
+                params = [runId, rateCounterName, cacheBlock];
+            } else if (type === 'core') {
+                query  = `SELECT timestamp, SUM(value) FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block NOT LIKE 'L%' GROUP BY timestamp ORDER BY timestamp`;
+                params = [runId, rateCounterName];
+            } else {
+                query  = `SELECT timestamp, SUM(value) FROM counters WHERE run_id = ? AND counter_name = ? AND cache_block LIKE ? GROUP BY timestamp ORDER BY timestamp`;
+                params = [runId, rateCounterName, `${type}_%`];
             }
+            const result = db.exec(query, params);
+            return result.length > 0 ? result[0].values : [];
+        }
 
+        function plotCounter() {
+            if (!counterSelect.value) return;
+            const counterName     = counterSelect.value;
+            const rateCounterName = counterName + '_rate';
+            const type            = typeSelect.value;
+            const cacheBlock      = cacheBlockSelect.value;
             clearError();
 
-            const colors = [
-                'rgb(75, 192, 192)', 'rgb(255, 99, 132)', 'rgb(54, 162, 235)',
-                'rgb(255, 206, 86)', 'rgb(153, 102, 255)', 'rgb(255, 159, 64)',
-                'rgb(201, 203, 207)', 'rgb(255, 205, 86)'
-            ];
+            if (compareMode) {
+                if (!compareRunAId || !compareRunBId) {
+                    showError('Select both Run A and Run B first');
+                    return;
+                }
+                const rowsA = queryCounterSummed(compareRunAId, rateCounterName, type, cacheBlock);
+                const rowsB = queryCounterSummed(compareRunBId, rateCounterName, type, cacheBlock);
+                if (!rowsA.length && !rowsB.length) {
+                    showError('No data found for this counter in the selected runs');
+                    return;
+                }
+                const datasets = [];
+                // Normalize each run to t=0 so shifted absolute timestamps align
+                const t0A = rowsA.length ? rowsA[0][0] : 0;
+                const t0B = rowsB.length ? rowsB[0][0] : 0;
+                if (rowsA.length) datasets.push(makeDataset(`A: ${compareRunALabel}`, rowsA.map(([t,v]) => ({x: t - t0A, y:v})), 0));
+                if (rowsB.length) datasets.push(makeDataset(`B: ${compareRunBLabel}`, rowsB.map(([t,v]) => ({x: t - t0B, y:v})), 1));
+                const yLabel = cacheBlock
+                    ? `Rate (events/s) — ${getBlockLabel(cacheBlock, type)}`
+                    : 'Rate (events/s) — all blocks summed';
+                renderChart(datasets, yLabel);
 
-            let datasets = [];
-
-            if (cacheBlock) {
-                const data = result[0].values.map(([timestamp, value]) => ({ x: timestamp, y: value }));
-                datasets.push({
-                    label: `${counterName} (${getBlockLabel(cacheBlock, type)})`,
-                    data,
-                    borderColor: colors[0],
-                    backgroundColor: colors[0].replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    tension: 0.1
-                });
             } else {
-                const blockData = {};
-                result[0].values.forEach(([timestamp, cache_block, value]) => {
-                    if (!blockData[cache_block]) blockData[cache_block] = [];
-                    blockData[cache_block].push({ x: timestamp, y: value });
-                });
+                if (!currentRunId) return;
+                const rows = queryCounter(currentRunId, rateCounterName, type, cacheBlock);
+                if (!rows.length) { showError('No data found for this counter/type combination'); return; }
 
-                let colorIndex = 0;
-                Object.keys(blockData).sort().forEach(block => {
-                    datasets.push({
-                        label: `${counterName} (${getBlockLabel(block, type)})`,
-                        data: blockData[block],
-                        borderColor: colors[colorIndex % colors.length],
-                        backgroundColor: colors[colorIndex % colors.length].replace('rgb', 'rgba').replace(')', ', 0.1)'),
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.1
+                let datasets = [];
+                if (cacheBlock) {
+                    datasets.push(makeDataset(`${counterName} (${getBlockLabel(cacheBlock, type)})`, rows.map(([t,v]) => ({x:t,y:v})), 0));
+                } else {
+                    const blockData = {};
+                    rows.forEach(([t, blk, v]) => {
+                        if (!blockData[blk]) blockData[blk] = [];
+                        blockData[blk].push({ x: t, y: v });
                     });
-                    colorIndex++;
-                });
+                    Object.keys(blockData).sort().forEach((blk, i) => {
+                        datasets.push(makeDataset(`${counterName} (${getBlockLabel(blk, type)})`, blockData[blk], i));
+                    });
+                }
+                renderChart(datasets, 'Rate (events/s)');
             }
+        }
 
+        function renderChart(datasets, yLabel) {
             const ctx = document.getElementById('counterChart').getContext('2d');
             if (chart) chart.destroy();
-
             chart = new Chart(ctx, {
                 type: 'line',
                 data: { datasets },
@@ -843,13 +1044,8 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: {
-                            type: 'linear',
-                            title: { display: true, text: 'Timestamp' }
-                        },
-                        y: {
-                            title: { display: true, text: 'Value' }
-                        }
+                        x: { type: 'linear', title: { display: true, text: compareMode ? 'Time from start' : 'Timestamp' } },
+                        y: { title: { display: true, text: yLabel } }
                     },
                     plugins: {
                         legend: { display: true, position: 'top' },
@@ -857,6 +1053,15 @@
                     }
                 }
             });
+        }
+
+        // ── Helper ─────────────────────────────────────────────────────────────
+
+        function addOption(select, value, text) {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = text;
+            select.appendChild(o);
         }
     </script>
 </body>
